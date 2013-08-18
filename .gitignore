@@ -1,0 +1,91 @@
+#!/usr/bin/python2.6
+# we make the file readable to the operating system
+
+import twitter #import the twitter module 
+import operator # this will help us in sorting the results
+
+query= input("Hallo! What would you like to search on twitter? (don't forget using quotation marks) ") 
+#the input function customizes search queries for each user. the query i used for the assingment in order to export a csv and create a graph with datawrapper.de was "snow"
+
+#construct twitter API object
+searchApi = twitter.Twitter(domain="search.twitter.com")
+
+twittersdict = {} #creating dictionary for the users
+twitsendersDict = {} #creating dictionary for the tweet senders
+twitreceiversDict= {} #creating dictionary for the tweet receivers
+twitpairsDict = {} #creating dictionary for the tweet pairs
+
+for x in range(1,16): #creating a loop for extracting 15 pages of 100 tweets each
+	response = searchApi.search(q=query, rpp=100, page=x) #we search using the API and the query. the results are stored in the variable 'response'.
+	tweetresults = response["results"] #search the response dictionary and get the tweets with key 'results'
+	
+	#identify the distinct users who sent a tweet by looping through the results
+	for tweet in tweetresults:
+		userName = tweet["from_user"] #search and get the username from the tweet dictionary with key ''user''
+		if userName in twittersdict: #if user is already in the twittersdict
+			twittersdict[userName] += 1 #add one
+		else:
+			twittersdict[userName] = 1 #else add a new entry counting  from one
+			
+		#checking for convertational tweets, basically for tweets that start with @username
+		twittext = tweet["text"] #get the text from the tweet dictionary with key 'text'
+		if twittext[0] == "@": #if the text starts with @ then its conversational
+			tweetsender = tweet["from_user"] #get the tweet-sender in the tweet dictionary with key ''from_user''
+			tweetreceiver = tweet["to_user"] #get the tweet-receiver in the tweet dictionary with key ''to_user''		
+			#checking if the sender of converasational tweeters already exist in our list
+			if tweetsender in twitsendersDict:
+				twitsendersDict[tweetsender] += 1
+			else:
+				twitsendersDict[tweetsender]  = 1
+			#checking if the sender of converasational tweeters already exist in our list
+			if tweetreceiver in twitreceiversDict:
+				twitreceiversDict[tweetreceiver] += 1
+			else:
+				twitreceiversDict[tweetreceiver] = 1
+			#searching and counting the twitter pairs (sender, receiver)
+			if (tweetsender,tweetreceiver) in twitpairsDict: #if we have a pair of senders,receivers in pairDict
+				twitpairsDict[(tweetsender,tweetreceiver)] += 1 #add one if it already exists
+			else:
+				twitpairsDict[(tweetsender,tweetreceiver)] = 1 #create a new entry		
+	
+	
+	
+#sorts and prints top 10 tweeter by tweet-volume
+f1=open("new.csv","w+") #open a file for writing 
+sorted_results = sorted(twittersdict.iteritems(),key=operator.itemgetter(1),reverse=True) #sorts the items
+print "\nTop 10 Twitter Users" # prints a new line "\n" and adds a header of the top tweeter
+print "User name, \tTweets" #prints headers for each column (username and tweets) separated by a tab
+for user in sorted_results[0:10]: #for each user in sorted_results
+	print '%s \t %d' % (user[0], user[1]) #prints the username (user[0]) and counts his tweets (user[1]) seperated by a tab
+	f1.write("%s , %d\n" % (user[0], user[1]) ) #writes  the same things to the exported file, instead of a tab it uses comma	
+#f1.close()	
+	
+#sorts and prints top 10 senders and receivers
+sorted_results = sorted(twitsendersDict.iteritems(),key=operator.itemgetter(1),reverse=True)
+print "\nTop 10 Twitter Senders"
+print "User name, \tTweets"
+for user in sorted_results[0:10]:
+	print '%s \t %d' % (user[0], user[1])
+		
+sorted_results = sorted(twitreceiversDict.iteritems(),key=operator.itemgetter(1),reverse=True)
+print "\nTop 10 Twitter Receivers"
+print "User name, \tTweets"
+for user in sorted_results[0:10]:
+	print '%s \t %d' % (user[0], user[1])
+		
+#sorts and prints top 10 twitter pairs
+	sorted_results = sorted(twitpairsDict.iteritems(),key=operator.itemgetter(1),reverse=True)
+print "\nTop 10 pairs of Twitter senders-receivers"
+print "Pair, \tTweets"
+for pair in sorted_results[0:10]: #a pair is a list that contains [(sender,receiver), counts]. We can call (sender,receiver) with pair[0] and the counts with pair[1]
+	(name1, name2) = pair[0] # we break pair[0] in name1 and name2
+	print '%s - %s \t %d' % (name1,name2, pair[1])
+	
+	
+		
+		
+	
+	
+		
+		
+		
